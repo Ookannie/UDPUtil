@@ -1,7 +1,9 @@
 package udpUtil;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.DatagramPacket;
@@ -89,6 +91,24 @@ public class UDPUtil {
         objOutputStream.close();
 
         return byteArrayOS.toByteArray();
+    }
+
+    /**
+     * Método que permite deserializar un objeto
+     *
+     * @param data El arreglo de bytes que se desea deserializar. 
+     * @return Un objeto deserializado.
+     * @throws IOException Si ocurre algún error durante el proceso de
+     * serialización. ClassNotFoundException en caso de no encontrar la clase.
+     */
+    public Object deserealizeObject(byte[] data) throws IOException, ClassNotFoundException {
+        ByteArrayInputStream byteArrayIS = new ByteArrayInputStream(data);
+        ObjectInputStream objInputStream = new ObjectInputStream(byteArrayIS);
+
+        Object obj = objInputStream.readObject();
+        objInputStream.close();
+
+        return obj;
     }
 
     /**
