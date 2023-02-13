@@ -1,3 +1,7 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package udpUtil;
 
 import java.io.ByteArrayInputStream;
@@ -10,23 +14,31 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 
-public class UDPUtil {
+/**
+ *
+ * @author pocos pero locos
+ */
+public class UDPSender {
 
     private DatagramSocket udpSocket;
     private InetAddress address;
     private int port;
     private int nextSeqNum;
+    private int packetSize;
 
     /*
         Método constructor que recibe como parámetros el socket UPD 
         el InetAddres y el puerto
      */
-    public UDPUtil(DatagramSocket socket, InetAddress address, int port) {
+    public UDPSender(DatagramSocket socket, InetAddress address, int port, int packetSize) {
         this.udpSocket = socket;
         this.address = address;
         this.port = port;
         this.nextSeqNum = 0;
+        this.packetSize = packetSize;
     }
 
     /**
@@ -37,7 +49,8 @@ public class UDPUtil {
      */
     public void sendObject(Serializable obj) throws IOException {
         byte[] data = serializeObject(obj);
-        sendPacket(data);
+        List<byte[]> packets = splitIntoPackets(data);
+        sendPackets(packets);
     }
 
     /**
@@ -94,24 +107,6 @@ public class UDPUtil {
     }
 
     /**
-     * Método que permite deserializar un objeto
-     *
-     * @param data El arreglo de bytes que se desea deserializar. 
-     * @return Un objeto deserializado.
-     * @throws IOException Si ocurre algún error durante el proceso de
-     * serialización. ClassNotFoundException en caso de no encontrar la clase.
-     */
-    public Object deserealizeObject(byte[] data) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream byteArrayIS = new ByteArrayInputStream(data);
-        ObjectInputStream objInputStream = new ObjectInputStream(byteArrayIS);
-
-        Object obj = objInputStream.readObject();
-        objInputStream.close();
-
-        return obj;
-    }
-
-    /**
      * Método que convierte un entero en un arreglo de bytes.
      *
      * @param num Entero a convertir en bytes.
@@ -138,4 +133,31 @@ public class UDPUtil {
                 + ((bytes[2] & 0xFF) << 8)
                 + (bytes[3] & 0xFF);
     }
+
+    private List<byte[]> splitIntoPackets(byte[] data) {
+        List<byte[]> packets = new ArrayList<>();
+        int numPackets = (int) Math.ceil(data.length / (double) packetSize);
+
+        for (int i = 0; i < numPackets; i++) {
+            int start = i * numPackets;
+            int end = Math.min(start + numPackets, data.length); //checar
+
+            byte[] packet = new byte[end - start];
+            System.arraycopy(data, start, packet, 0, packet.length);
+
+            packets.add(packet);
+
+        }
+        return packets;
+    }
+
+    private void sendPackets(List<byte[]> packets) throws IOException {
+        byte[] numPackets = intToBytes(packets.size());
+        this.sendPacket(numPackets);
+        
+        for (byte[] packet : packets) {
+            this.sendPacket(packet);
+        }
+    }
+
 }
